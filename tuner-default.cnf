@@ -31,8 +31,9 @@ MySQL Architecture||| !~ /64/|||"version_compile_machine"|||MySQL is not compile
 #Query cache
 Query cache efficiency (%)|||<20|||Qcache_hits/(Com_select+Qcache_hits)*100|||query cache not efficient, consider increasing query_cache_limit.
 % query cache used|||<80|||Qcache_free_memory / query_cache_size * 100|||The query cache is not being fully utilized.
-Query cache low memory prunes per day|||>98|||Qcache_lowmem_prunes / Uptime / 86400|||Increase query_cache_size -- there are too many low memory prunes.
+Query cache low memory prunes|||=~ /second|minute/|||&hr_bytime(Qcache_lowmem_prunes/Uptime)|||Increase query_cache_size -- there are too many low memory prunes.
 Query cache size|||eq "0 bytes"|||&hr_bytes(query_cache_size)|||The query_cache is not turned on.  It may be useful to turn it on.
+Query cache min result size|||eq "1.0 Mb"|||&hr_bytes(query_cache_limit)|||The max size of the result set in the query cache is the default of 1 Mb.  Changing this (usually by increasing) may increase efficiency.
 #
 # Sorts
 Total sorts|||<0|||Sort_scan+Sort_range|||Something is wrong with the Sort_scan and/or Sort_range values
@@ -50,6 +51,8 @@ tmp_table_size-max_heap_table_size|||!=0|||tmp_table_size-max_heap_table_size|||
 tmp_table_size|||eq "0 bytes"|||&hr_bytes(tmp_table_size)|||There is something wrong with the value of tmp_table_size
 max_heap_table_size|||eq "0 bytes"|||&hr_bytes(max_heap_table_size)|||There is something wrong with the value of max_heap_table_size
 % temp disk tables|||>25|||Created_tmp_disk_tables / (Created_tmp_tables + Created_tmp_disk_tables) * 100|||Too many temporary tables are being written to disk.  Increase max_heap_table_size and tmp_table_size.
+temp disk rate|||=~ /second|minute/|||&hr_bytime(Created_tmp_disk_tables/Uptime)|||Too many temporary tables are being written to disk.  Increase max_heap_table_size and tmp_table_size.
+temp table rate|||=~ /second|minute/|||&hr_bytime(Created_tmp_tables/Uptime)|||Too many intermediate temporary tables are being created; consider increasing sort_buffer_size (sorting), read_rnd_buffer_size (random read buffer, ie, post-sort), read_buffer_size (sequential scan).
 #
 # MyISAM index cache
 MyISAM key buffer size|||eq "0 bytes"|||&hr_bytes(key_buffer_size)|||Key buffer is not initialized.  No MyISAM indexes will be cached.
@@ -59,6 +62,7 @@ max % MyISAM key buffer ever used|||<95|||(Key_blocks_used)*key_cache_block_size
 #
 # other caches
 % table cache hit rate|||<20|||Open_tables/Opened_tables*100|||The table cache could be more efficient, consider increasing table_cache (table_open_cache in MySQL 5.1)\nIncrease the table cache gradually to avoid file descriptor limits
+table cache size|||>-1|||table_cache|||Size of the table cache
 rate of table open|||=~ /second|minute/|||&hr_bytime(Opened_tables/Uptime)|||The rate of opening tables is high, increase table_open_cache to avoid this.
 % open files|||>85|||Open_files / open_files_limit * 100|||The number of open files is approaching the max number of open files.  You may get a "Too many open files" error.\nConsider increasing open_files_limit, and check the error log when restarting after changing open_files_limit.
 Immediate table locks %|||<95|||Table_locks_immediate / (Table_locks_waited + Table_locks_immediate) * 100|||Too many table locks were not granted immediately. Optimize queries and/or use InnoDB to reduce lock wait.
