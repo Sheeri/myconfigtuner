@@ -1,8 +1,8 @@
-## mysqltuner.py (Python)
+# mysqltuner.py (Python)
 
 A Python port of the legacy `mysqltuner.pl` (v2.0.x) - https://launchpad.net/mysqltuner. It evaluates expressions from a config file against MySQL variables and status, and optionally prints recommendations.
 
-### Requirements
+# Requirements
 python3 -m venv path/to/venv
 source path/to/venv/bin/activate
 python3 -m pip install xyz
@@ -16,10 +16,11 @@ python3 -m pip install xyz
     - `PyMySQL` — `pip install PyMySQL`
     - `mysqlclient` (C extension) — `pip install mysqlclient`
 
-### Files
+# Files used
 - `mysqltuner.py`: Script entry point.
 - Your tuning config file (not included), e.g. `tuner-default.cnf`.
 
+## Config file format
 The config file must contain one rule per line using the following format:
 
 ```
@@ -37,7 +38,7 @@ Example config line:
 Connections ||| > 100 ||| Threads_connected ||| Consider lowering max_connections or investigating connection spikes.\n
 ```
 
-### Usage
+# Usage
 
 ```
 python3 mysqltuner.py --config tuner-default.cnf [--recommend] [--output pretty|csv] \
@@ -45,7 +46,7 @@ python3 mysqltuner.py --config tuner-default.cnf [--recommend] [--output pretty|
   [--filelist file1.txt,file2.txt] [--forcemem MB --forceswap MB --forcearch 32|64]
 ```
 
-Examples:
+## Examples
 
 - Connect to local server using default client credentials (e.g., ~/.my.cnf or socket auth):
 ```
@@ -76,10 +77,9 @@ python3 mysqltuner.py --config tuner-default.cnf --filelist vars.txt,status.txt 
 - Lint: `ruff` or `flake8` (optional).
 - Testing: run the script against a dev MySQL instance or offline files.
 
-### License
+# License
 
 This software is licensed under the Mozilla Public License (MPL).
-
 
 Added files and impact:
 - mysqltuner.py: Functional Python port that connects to MySQL or parses offline inputs, evaluates config rules, prints results and optional recommendations.
