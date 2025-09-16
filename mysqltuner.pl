@@ -363,9 +363,8 @@ sub mysql_setup() {
 		chomp($opt{host});
 		$opt{port} = ($opt{port} eq 0)? 3306 : $opt{port} ;
 		# If we're doing a remote connection, but forcemem wasn't specified, we need to exit
-		if ($opt{'forcemem'} eq 0) {
+                if ($opt{'forcemem'} eq 0 && $opt{host} ne '127.0.0.1') {
 			print ("!! - The --forcemem option is required for remote connections\n");
-			print_all();
 			exit 20;
 		}
 		print ("-- Performing tests on $opt{host}:$opt{port}\n");
