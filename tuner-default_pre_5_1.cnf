@@ -9,11 +9,14 @@ Uptime in seconds|||<86400|||Uptime|||Uptime is less than 1 day, performance tun
 Uptime|||eq ''|||&pretty_uptime(Uptime)|||Server not running?!?
 Questions|||< 1000|||Questions|||Run for a longer amount of time, fewer than 1,000 questions have been run against this server.  Variables may not be accurate.
 % slow queries|||>5|||Slow_queries/Questions * 100|||Too many slow queries, either increase long_query_time or optimize the queries so they are no longer slow.
+slow query rate|||=~ /second|minute/|||&hr_bytime((Slow_queries/Questions * 100)/Uptime)|||Too many slow queries, either increase long_query_time or optimize the queries so they are no longer slow.
 Long query time|||>=10|||long_query_time|||long_query_time is set to 10 seconds or more.  This may not be appropriate for your environment.
 Slow query logging|||eq 'OFF'|||"log_slow_queries"|||Enable the slow query log to troubleshoot bad queries.
 % reads|||<0|||Com_select/(Com_select+Com_insert+Com_update+Com_replace+Com_delete)*100|||There is a problem with one of the following status variables:\nCom_select,Com_insert,Com_update,Com_replace,Com_delete
 % writes|||<0|||(Com_insert+Com_update+Com_replace+Com_delete)/(Com_select+Com_insert+Com_update+Com_replace+Com_delete)*100|||There is a problem with one of the following status variables:\nCom_select,Com_insert,Com_update,Com_replace,Com_delete
 qps|||<0|||Questions/Uptime|||There is a problem with the Questions or Uptime value!
+reads per sec|||eq ''|||&hr_bytime(Com_select/(Com_select+Com_insert+Com_update+Com_replace+Com_delete)/Uptime)|||There is a problem with one of the following status variables:\nCom_select,Com_insert,Com_update,Com_replace,Com_delete
+writes per sec|||eq ''|||&hr_bytime((Com_insert+Com_update+Com_replace+Com_delete)/(Com_select+Com_insert+Com_update+Com_replace+Com_delete)/Uptime)|||There is a problem with one of the following status variables:\nCom_select,Com_insert,Com_update,Com_replace,Com_delete
 Queries|||eq ''|||&hr_bytime(Questions/Uptime)|||There is a problem with the Questions or Uptime value!
 Connections|||eq ''|||&hr_num(Connections)|||There is a problem with the Connections value!
 Bytes sent|||eq ''|||&hr_num(Bytes_sent)|||There is a problem with the Bytes_sent value!
@@ -38,6 +41,7 @@ Query cache min result size|||eq "1.0 Mb"|||&hr_bytes(query_cache_limit)|||The m
 # Sorts
 Total sorts|||<0|||Sort_scan+Sort_range|||Something is wrong with the Sort_scan and/or Sort_range values
 % sorts that cause temporary tables|||>10|||Sort_merge_passes/(Sort_scan+Sort_range)*100|||Too many sorts are causing temporary tables.  Consider increasing\nsort_buffer_size and/or read_rnd_buffer_size
+rate of sorts that cause temporary tables|||=~ /second|minute/|||&hr_bytime(Sort_merge_passes/Uptime)|||Too many sorts are causing temporary tables.  Consider increasing\nsort_buffer_size and/or read_rnd_buffer_size
 sort_buffer_size|||eq "0 bytes"|||&hr_bytes(sort_buffer_size)|||There is something wrong with the value of sort_buffer_size
 read_rnd_buffer_size|||eq "0 bytes"|||&hr_bytes(read_rnd_buffer_size)|||There is something wrong with the value of read_rnd_buffer_size
 Sort rows|||=~ /second|minute/|||&hr_bytime(Sort_rows/Uptime)|||There are lots of rows being sorted.  Consider using indexes in more queries to avoid sorting too often.
@@ -61,10 +65,10 @@ max % MyISAM key buffer ever used|||<95|||(Key_blocks_used)*key_cache_block_size
 % index reads from memory|||<95|||100 - (Key_reads / Key_read_requests * 100)|||The % of indexes that use the MyISAM key buffer is low.  You may need to increase key_buffer_size.
 #
 # other caches
-table cache size (pre 5.1)|||>-1|||table_cache|||Size of the table cache
 table cache size|||>-1|||table_cache|||Size of the table cache
 rate of table open|||=~ /second|minute/|||&hr_bytime(Opened_tables/Uptime)|||The rate of opening tables is high, increase table_open_cache to avoid this.
 % open files|||>85|||Open_files / open_files_limit * 100|||The number of open files is approaching the max number of open files.  You may get a "Too many open files" error.\nConsider increasing open_files_limit, and check the error log when restarting after changing open_files_limit.
+rate of open files|||=~ /second|minute/|||&hr_bytime(Open_files /Uptime)|||The rate of opening files is high.\nConsider increasing open_files_limit, and check the error log when restarting after changing open_files_limit.
 Immediate table locks %|||<95|||Table_locks_immediate / (Table_locks_waited + Table_locks_immediate) * 100|||Too many table locks were not granted immediately. Optimize queries and/or use InnoDB to reduce lock wait.
 Table lock wait rate|||=~ /second|minute/|||&hr_bytime(Table_locks_waited/Uptime)|||Too many table locks were not granted immediately. Optimize queries and/or use InnoDB to reduce lock wait.
 thread cache|||<1|||thread_cache_size|||Enable the thread cache by setting thread_cache_size>0 for less overhead from new connections to MySQL.
@@ -78,7 +82,9 @@ Slow launch time|||<0|||slow_launch_time|||There is something wrong with the slo
 Max connections used|||<1|||Max_used_connections|||There is something wrong with the value of Max_used_connections.
 Max connections limit|||<1|||max_connections|||There is something wrong with the value of max_connections.
 % aborted connections|||>5|||Aborted_connects/Connections * 100|||Too many connections are aborted, meaning they cannot be authorized.
+rate of aborted connections|||=~ /second|minute/|||&hr_bytime(Aborted_connects/Uptime)|||Too many connections are aborted, meaning they cannot be authorized.
 % aborted clients|||>5|||Aborted_clients/Connections*100|||Too many clients are aborted, meaning they did not close their connection to MySQL properly.  This can be due to network issues or code not closing a database handler properly.
+rate of aborted clients|||=~ /second|minute/|||&hr_bytime(Aborted_clients/Uptime)|||Too many clients are aborted, meaning they did not close their connection to MySQL properly.  This can be due to network issues or code not closing a database handler properly.
 #
 # InnoDB
 Is InnoDB enabled?|||ne "YES"|||"have_innodb"|||You do not have InnoDB enabled
@@ -91,3 +97,7 @@ MyISAM concurrent inserts|||eq 0|||concurrent_insert|||Enable concurrent_insert 
 #Delayed_insert_threads 0
 #Delayed_writes 0
 #Not_flushed_delayed_rows
+
+
+
+

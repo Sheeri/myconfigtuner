@@ -1,4 +1,4 @@
-MySQL Tuner (http://launchpad.net/mysqltuner).  MySQL Tuner name used with the permission of the original mysqltuner creator, Major Hayden. 
+Pythian's MySQL Tuner (http://launchpad.net/mysqltuner).  MySQL Tuner name used with the permission of the original mysqltuner creator, Major Hayden. 
 
 This version of mysqltuner uses a configuration file where you can change the thresholds, add new variables/calculations to check, and custom tune the recommendations output.
 
@@ -52,5 +52,4 @@ The following options may be able to help if you get stuck:
     --help               Shows this help message
     --debug              debugging output will be shown
 
-README last changed 2010-03-02.
-Developed by Sheeri Cabral at Pythian and PalominoDB
+README last changed 2009-12-03.
