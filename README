@@ -1,5 +1,4 @@
-mysqltuner.py (Python)
-======================
+# mysqltuner.py (Python)
 
 A Python port of the legacy `mysqltuner.pl` (v2.0.x) - https://launchpad.net/mysqltuner. It evaluates expressions from a config file against MySQL variables and status, and optionally prints recommendations.
 
