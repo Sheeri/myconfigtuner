@@ -41,7 +41,7 @@
 
 ## Content changes
 - Sample configs and artifacts
-  - Added `minimal-tuner.cnf` and `tuner-myKaarma.python.cnf` example configs tailored to the Python evaluator.
+  - Added `minimal-tuner.cnf` and `tuner.cnf` example configs tailored to the Python evaluator.
   - Included example data and output artifacts (`vars.txt`, `status.txt`, `recommend.txt`) to demonstrate offline and reporting flows.
 
 - Rules
