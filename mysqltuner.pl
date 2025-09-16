@@ -149,8 +149,8 @@ print "\n\nRECOMMENDATIONS:\n". $recommendations."\n";
 
 sub get_vars_from_server() {
 if ($opt{debug}) { print "using SHOW commands on the live database\n"; }
-        push (@mysqlvarlist,`mysql $mysqllogin -Bse "SHOW /*!50000 GLOBAL */ VARIABLES;"`);
-        push (@mysqlvarlist,`mysql $mysqllogin -Bse "SHOW /*!50000 GLOBAL */ STATUS;"`);
+        push (@mysqlvarlist,`mysql $mysqllogin -Bse "SHOW /*!40003 GLOBAL */ VARIABLES;"`);
+        push (@mysqlvarlist,`mysql $mysqllogin -Bse "SHOW /*!50002 GLOBAL */ STATUS;"`);
 }
 
 sub get_vars_from_files() {

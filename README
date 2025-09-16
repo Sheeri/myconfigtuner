@@ -6,6 +6,8 @@ There is a default config file in this package, to use it, run:
 
 mysqltuner.pl --config tuner-default.cnf
 
+If you are not using MySQL 5.1, use tuner-default_pre_5_1.cnf
+
 Output:
 By default, mysqltuner.pl does not output recommendations, just the label and value.  To see the recommendations at the end of the output, use the --recommend option.
 
@@ -50,5 +52,5 @@ The following options may be able to help if you get stuck:
     --help               Shows this help message
     --debug              debugging output will be shown
 
-README last changed 2009-12-03.
-Developed by Sheeri Cabral at Pythian
+README last changed 2010-03-02.
+Developed by Sheeri Cabral at Pythian and PalominoDB

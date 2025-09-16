@@ -61,7 +61,7 @@ max % MyISAM key buffer ever used|||<95|||(Key_blocks_used)*key_cache_block_size
 % index reads from memory|||<95|||100 - (Key_reads / Key_read_requests * 100)|||The % of indexes that use the MyISAM key buffer is low.  You may need to increase key_buffer_size.
 #
 # other caches
-table open cache size (5.1+)|||>-1|||table_open_cache|||Size of the table cache
+table cache size (pre 5.1)|||>-1|||table_cache|||Size of the table cache
 table cache size|||>-1|||table_cache|||Size of the table cache
 rate of table open|||=~ /second|minute/|||&hr_bytime(Opened_tables/Uptime)|||The rate of opening tables is high, increase table_open_cache to avoid this.
 % open files|||>85|||Open_files / open_files_limit * 100|||The number of open files is approaching the max number of open files.  You may get a "Too many open files" error.\nConsider increasing open_files_limit, and check the error log when restarting after changing open_files_limit.
