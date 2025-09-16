@@ -1,0 +1,22 @@
+# Category: Basic checks
+# make sure we have enough information
+Uptime in seconds|||<86400|||Uptime|||Uptime is less than 1 day, performance tuning may not be accurate
+Uptime|||== ''|||pretty_uptime(Uptime)|||Server not running?!?
+Questions|||< 1000|||Questions|||Run for a longer amount of time, fewer than 1,000 questions have been run against this server.  Variables may not be accurate.
+% slow queries|||>5|||Slow_queries/Questions * 100|||Too many slow queries, either increase long_query_time or optimize the queries so they are no longer slow.
+slow query rate|||=~ /second|minute/|||hr_bytime((Slow_queries/Questions * 100)/Uptime_since_flush_status)|||Too many slow queries, either increase long_query_time or optimize the queries so they are no longer slow.
+Long query time|||>=10|||long_query_time|||long_query_time is set to 10 seconds or more.  This may not be appropriate for your environment.
+Slow query logging|||== 'OFF'|||log_slow_queries|||Enable the slow query log to troubleshoot bad queries.
+% reads|||<0|||Com_select/(Com_select+Com_insert+Com_update+Com_replace+Com_delete)*100|||There is a problem with one of the following status variables:\nCom_select,Com_insert,Com_update,Com_replace,Com_delete
+% writes|||<0|||(Com_insert+Com_update+Com_replace+Com_delete)/(Com_select+Com_insert+Com_update+Com_replace+Com_delete)*100|||There is a problem with one of the following status variables:\nCom_select,Com_insert,Com_update,Com_replace,Com_delete
+reads|||== ''|||hr_bytime(Com_select/Uptime_since_flush_status)|||There is a problem with one of the following status variables:\nCom_select
+writes|||== ''|||hr_bytime((Com_insert+Com_update+Com_replace+Com_delete)/Uptime_since_flush_status)|||There is a problem with one of the following status variables:\nCom_insert, Com_update, Com_replace, Com_delete
+Queries|||== ''|||hr_bytime(Questions/Uptime_since_flush_status)|||There is a problem with the Questions or Uptime value!
+Connections|||== ''|||hr_num(Connections/Uptime_since_flush_status)|||There is a problem with the Connections value!
+Bytes sent/sec|||== ''|||hr_bytes(Bytes_sent/Uptime_since_flush_status)|||There is a problem with the Bytes_sent value!
+Bytes received/sec|||== ''|||hr_bytes(Bytes_received/Uptime_since_flush_status)|||There is a problem with the Bytes_received value!
+
+# Category: Version and architecture
+Release cutoff (>= 2024-02-01) ||| not (  (int(v.split('.',1)[0]) > 11) or  (int(v.split('.',1)[0]) == 11 and int(v.split('.')[1]) >= 5) or  (int(v.split('.',1)[0]) == 10 and int(v.split('.')[1]) == 11 and int(v.split('.')[2]) >= 8) or (int(v.split('.',1)[0]) == 10 and int(v.split('.')[1]) == 6 and int(v.split('.')[2]) >= 17) ) ||| version.split("-", 1)[0] ||| Version predates cutoff; upgrade.
+Distribution|||=~ /source/i|||version_comment|||Version is compiled from source, not a MySQL official binary.  If you did not compile from source, you may be using a package modified by a distribution.  The MySQL manual only is accurate for official MySQL binaries, not any package distributions (such as RedHat, Debian/Ubuntu etc).
+Distribution|||=~ /percona/i|||version_comment|||The MySQL manual only is accurate for official MySQL binaries, Percona documentation is at http://www.percona.com/docs/wiki/

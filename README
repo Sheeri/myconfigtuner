@@ -1,55 +1,87 @@
-Pythian's MySQL Tuner (http://launchpad.net/mysqltuner).  MySQL Tuner name used with the permission of the original mysqltuner creator, Major Hayden. 
+## mysqltuner.py (Python)
 
-This version of mysqltuner uses a configuration file where you can change the thresholds, add new variables/calculations to check, and custom tune the recommendations output.
+A Python port of the legacy `mysqltuner.pl` (v2.0.x) - https://launchpad.net/mysqltuner. It evaluates expressions from a config file against MySQL variables and status, and optionally prints recommendations.
 
-There is a default config file in this package, to use it, run:
+### Requirements
+python3 -m venv path/to/venv
+source path/to/venv/bin/activate
+python3 -m pip install xyz
 
-mysqltuner.pl --config tuner-default.cnf
 
-If you are not using MySQL 5.1, use tuner-default_pre_5_1.cnf
+- Python 3.8+
+- Recommended libraries:
+  - `mysql-connector-python` (official Oracle driver) — used by default in this script
+    - Install: `pip install mysql-connector-python`
+  - Alternatives (supported if you modify the code accordingly):
+    - `PyMySQL` — `pip install PyMySQL`
+    - `mysqlclient` (C extension) — `pip install mysqlclient`
 
-Output:
-By default, mysqltuner.pl does not output recommendations, just the label and value.  To see the recommendations at the end of the output, use the --recommend option.
+### Files
+- `mysqltuner.py`: Script entry point.
+- Your tuning config file (not included), e.g. `tuner-default.cnf`.
 
-The default output is the "pretty" mode, which is of the format:
-label: value
-By specifying --output <type>, you can change the format of the output.  Current output types are "pretty" and "csv".
-The "csv" output mode is of the format:
-label,value
+The config file must contain one rule per line using the following format:
 
-Connecting:
-By default, mysqltuner.pl will ask for a username and password and connect to the mysqld instance on localhost.  You can use the following options to mysqltuner.pl to set the mysqld instance to connect to:
+```
+<label> ||| <comparison> ||| <expression> ||| <recommendation>
+```
 
---host <hostname>    Host to connect to for data retrieval (default: localhost)
---port <port>        Port to use for connection (default: 3306)
---socket <socket>    Socket to connect to for data retrieval
---user <username>    Username to use for authentication
---pass <password>    Password to use for authentication
+Notes:
+- Lines starting with `#` are ignored.
+- `<expression>` is evaluated in Python. Some helpers are available: `hr_bytes`, `hr_num`, `hr_bytime`, `pretty_uptime`.
+- Variables from MySQL `SHOW GLOBAL VARIABLES` and `SHOW GLOBAL STATUS` are available by their names. The script substitutes identifiers that match variable names with their values before evaluating the expression.
 
-Remote operation:
-By default, mysqltuner.pl will try to get local information for memory, swap, and whether the operating system is 32 or 64-bit.  If you are connecting to a remote mysqld instance, you should set the following three options:
+Example config line:
 
---forcemem <size>    Use this amount of RAM in Mb instead of getting local memory size
---forceswap <size>   Amount of swap memory configured in megabytes
---forcearch 32|64    Architecture of operating system (32-bit or 64-bit)
+```
+Connections ||| > 100 ||| Threads_connected ||| Consider lowering max_connections or investigating connection spikes.\n
+```
 
-Offline operation:
-mysqltuner.pl can work in an offline mode by using information inside of files, instead of querying the server itself.  To use offline mode, first obtain the information desired in one or more files, such as:
+### Usage
 
-mysql -e "SHOW GLOBAL VARIABLES" > vars.txt
-mysql -e "SHOW GLOBAL STATUS" > status.txt
+```
+python3 mysqltuner.py --config tuner-default.cnf [--recommend] [--output pretty|csv] \
+  [--host HOST --port 3306 --user USER --pass PASS | --socket /path/to/socket] \
+  [--filelist file1.txt,file2.txt] [--forcemem MB --forceswap MB --forcearch 32|64]
+```
 
-The files must contain 2 fields (variable name and value) separated by whitespace (ie, a space or tab).  
-You should also use --forcemem, --forceswap and --forcearch when operating in offline mode (see Remote operation) 
-to avoid spurious errors.  The --filelist option takes one or more filenames (comma-separated).  
+Examples:
 
-  Sample offline operation:
-  perl mysqltuner.pl --config tuner-default.cnf --forcemem 16384 --forceswap 2048 --forcearch 64 \
-  --filelist vars.txt,status.txt
+- Connect to local server using default client credentials (e.g., ~/.my.cnf or socket auth):
+```
+python3 mysqltuner.py --config tuner-default.cnf --recommend
+```
 
-Help:
-The following options may be able to help if you get stuck:
-    --help               Shows this help message
-    --debug              debugging output will be shown
+- Connect to remote server explicitly:
+```
+python3 mysqltuner.py --config tuner-default.cnf --host 10.1.2.3 --port 3306 --user root --pass secret --recommend
+```
 
-README last changed 2009-12-03.
+- Offline analysis from files (lines of `key value`):
+vars.txt is a file created by running `mysql -e "show variables;"`
+status.txt is a file created by running `mysql -e "show status;"`
+
+```
+python3 mysqltuner.py --config tuner-default.cnf --filelist vars.txt,status.txt --forcemem 16384 --forceswap 8192 --forcearch 64
+```
+
+### Behavior differences from Perl version
+
+- Expressions are evaluated in Python, not Perl.
+- The script avoids shelling out to `mysql`/`mysqladmin`; it uses a Python driver for portability.
+- Safer evaluation sandbox: only a small set of functions are exposed in expressions.
+
+### Development
+
+- Lint: `ruff` or `flake8` (optional).
+- Testing: run the script against a dev MySQL instance or offline files.
+
+### License
+
+This software is licensed under the Mozilla Public License (MPL).
+
+
+Added files and impact:
+- mysqltuner.py: Functional Python port that connects to MySQL or parses offline inputs, evaluates config rules, prints results and optional recommendations.
+- README.md: Usage, config format, and recommended libraries.
+- requirements.txt: Pins mysql-connector-python
