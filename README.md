@@ -1,87 +1,107 @@
-# mysqltuner.py (Python)
+## mysqltuner.py (Python 3)
 
-A Python port of the legacy `mysqltuner.pl` (v2.0.x) - https://launchpad.net/mysqltuner. It evaluates expressions from a config file against MySQL variables and status, and optionally prints recommendations.
+A Python 3 port of the legacy `mysqltuner.pl` (v2.0.1). It evaluates rules from a config file against MySQL server variables and status, and can print recommendations based on thresholds.
 
-# Requirements
-python3 -m venv path/to/venv
-source path/to/venv/bin/activate
-python3 -m pip install xyz
-
+### Requirements
 
 - Python 3.8+
-- Recommended libraries:
-  - `mysql-connector-python` (official Oracle driver) — used by default in this script
-    - Install: `pip install mysql-connector-python`
-  - Alternatives (supported if you modify the code accordingly):
-    - `PyMySQL` — `pip install PyMySQL`
-    - `mysqlclient` (C extension) — `pip install mysqlclient`
+- Install runtime dependencies:
 
-# Files used
+```bash
+pip install -r requirements.txt
+```
+
+- Runtime dependency: `mysql-connector-python` (used by default)
+
+### Included Files
+
 - `mysqltuner.py`: Script entry point.
-- Your tuning config file (not included), e.g. `tuner-default.cnf`.
+- `tuner.cnf`: Comprehensive example rules for the Python evaluator.
+- `minimal-tuner.cnf`: Minimal example ruleset to validate your setup.
+- `vars.txt`, `status.txt`: Example inputs for offline mode.
 
-## Config file format
-The config file must contain one rule per line using the following format:
+### Config File Format
+
+One rule per line:
 
 ```
 <label> ||| <comparison> ||| <expression> ||| <recommendation>
 ```
 
-Notes:
-- Lines starting with `#` are ignored.
-- `<expression>` is evaluated in Python. Some helpers are available: `hr_bytes`, `hr_num`, `hr_bytime`, `pretty_uptime`.
-- Variables from MySQL `SHOW GLOBAL VARIABLES` and `SHOW GLOBAL STATUS` are available by their names. The script substitutes identifiers that match variable names with their values before evaluating the expression.
+- Lines beginning with `#` are comments. Category headers can be emitted by adding comment lines like `# Category: Connections`.
+- `<expression>` is Python and can reference MySQL variables/status by name. Before evaluation, identifiers that match fetched variable names are replaced with their values (numeric strings remain numeric; other strings are quoted).
+- Helpers available in expressions: `hr_bytes`, `hr_num`, `hr_bytime`, `pretty_uptime`, `substr`.
 
-Example config line:
-
-```
-Connections ||| > 100 ||| Threads_connected ||| Consider lowering max_connections or investigating connection spikes.\n
-```
-
-# Usage
+Example:
 
 ```
-python3 mysqltuner.py --config tuner-default.cnf [--recommend] [--output pretty|csv] \
-  [--host HOST --port 3306 --user USER --pass PASS | --socket /path/to/socket] \
+Connections ||| > 100 ||| Threads_connected ||| Consider lowering max_connections or investigating connection spikes.
+```
+
+### Usage
+
+```
+python3 mysqltuner.py --config tuner.cnf [--recommend] [--output pretty|csv] \
+  [--host HOST --port 3306 --user USER (-p[PASS] | --pass PASS) | --socket /path/to/socket] \
+  [--defaults-extra-file=/path/to/file.cnf] \
   [--filelist file1.txt,file2.txt] [--forcemem MB --forceswap MB --forcearch 32|64]
 ```
 
-## Examples
+#### Common examples
 
-- Connect to local server using default client credentials (e.g., ~/.my.cnf or socket auth):
-```
-python3 mysqltuner.py --config tuner-default.cnf --recommend
-```
-
-- Connect to remote server explicitly:
-```
-python3 mysqltuner.py --config tuner-default.cnf --host 10.1.2.3 --port 3306 --user root --pass secret --recommend
-```
-
-- Offline analysis from files (lines of `key value`):
-vars.txt is a file created by running `mysql -e "show variables;"`
-status.txt is a file created by running `mysql -e "show status;"`
+- Local server using socket or `~/.my.cnf`:
 
 ```
-python3 mysqltuner.py --config tuner-default.cnf --filelist vars.txt,status.txt --forcemem 16384 --forceswap 8192 --forcearch 64
+python3 mysqltuner.py --config tuner.cnf --recommend
 ```
 
-### Behavior differences from Perl version
+- Remote server with explicit credentials:
 
-- Expressions are evaluated in Python, not Perl.
-- The script avoids shelling out to `mysql`/`mysqladmin`; it uses a Python driver for portability.
-- Safer evaluation sandbox: only a small set of functions are exposed in expressions.
+```
+python3 mysqltuner.py --config minimal-tuner.cnf --host 10.1.2.3 --port 3306 --user root --pass secret --recommend
+```
 
-### Development
+- Prompt for password (`-p` with no value):
 
-- Lint: `ruff` or `flake8` (optional).
-- Testing: run the script against a dev MySQL instance or offline files.
+```
+python3 mysqltuner.py --config tuner.cnf --host 127.0.0.1 --user app -p
+```
 
-# License
+- Use a MySQL-style defaults file (reads `[client]` and `[mysqltuner]`; the latter overrides the former; CLI overrides both):
 
-This software is licensed under the Mozilla Public License (MPL).
+```
+python3 mysqltuner.py --config tuner.cnf --defaults-extra-file=./tuner.local.cnf
+```
 
-Added files and impact:
-- mysqltuner.py: Functional Python port that connects to MySQL or parses offline inputs, evaluates config rules, prints results and optional recommendations.
-- README.md: Usage, config format, and recommended libraries.
-- requirements.txt: Pins mysql-connector-python
+Example `tuner.local.cnf`:
+
+```
+[client]
+host=127.0.0.1
+port=3306
+
+[mysqltuner]
+user=myuser
+password=MY_SECRET_PASS
+socket=/tmp/mysql.sock
+```
+
+- Offline analysis from files (each line as `key value`):
+
+```
+python3 mysqltuner.py --config minimal-tuner.cnf --filelist vars.txt,status.txt --forcemem 16384 --forceswap 8192 --forcearch 64
+```
+
+Notes:
+- For remote hosts (anything other than `localhost` or `127.0.0.1`), `--forcemem` is required to mimic the original Perl behavior.
+- `--output csv` prints `label,value` pairs; with `--recommend`, CSV adds `Recommendation,<text>` lines following triggering metrics.
+
+### Behavior vs. Perl Version
+
+- Expressions are Python, not Perl—double-check operator semantics, division, and regexes when porting custom rules.
+- Uses a Python driver instead of shelling out to `mysql`/`mysqladmin`.
+- Safer evaluation sandbox with a minimal set of helper functions.
+
+### License
+
+GPLv3 (mirrors the original `mysqltuner.pl`).

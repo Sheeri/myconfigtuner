@@ -1,4 +1,16 @@
 ### mysqltuner.py CHANGELOG
+2025-10-31
+
+## Documentation and clarifications
+- Refreshed `README.md` with clear setup steps (`pip install -r requirements.txt`) and examples that use the included configs `tuner.cnf` and `minimal-tuner.cnf`.
+- Documented precedence for `--defaults-extra-file` (CLI > [mysqltuner] > [client]) and provided a concrete example file.
+- Noted `-p` prompt behavior when used without a value.
+- Clarified CSV recommendation output format (`Recommendation,<text>` lines following triggering metrics).
+- Listed helper functions available in expressions (`hr_bytes`, `hr_num`, `hr_bytime`, `pretty_uptime`, `substr`).
+
+## Packaging
+- Confirmed runtime dependency pin in `requirements.txt` (`mysql-connector-python>=8.0,<9.0`).
+
 2025-09-15
 
 ## Overview

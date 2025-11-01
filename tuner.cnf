@@ -79,6 +79,7 @@ Immediate table locks %|||<95|||Table_locks_immediate / (Table_locks_waited + Ta
 Table lock wait rate|||=~ /second|minute/|||hr_bytime(Table_locks_waited/Uptime_since_flush_status)|||Too many table locks were not granted immediately. Optimize queries and/or use InnoDB to reduce lock wait.
 thread cache|||<1|||thread_cache_size|||Enable the thread cache by setting thread_cache_size>0 for less overhead from new connections to MySQL.
 Total threads created|||<1|||Threads_created|||There is something wrong with the value of Threads_created.
+Thread pooling||| == 'one-thread-per-connection' |||thread_handling||| Consider using pool-of-threads
 % thread cache misses|||>10|||Threads_created/Connections*100|||Increase thread_cache_size to reduce thread creation overhead.
 % thread cache utilization|||<40|||100*Threads_cached/thread_cache_size|||Increase thread_cache_size; low cache utilization implies frequent thread creation.
 Threads that are slow to launch|||>0|||Slow_launch_threads|||There are too many threads that are slow to launch

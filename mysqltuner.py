@@ -17,6 +17,8 @@ import argparse
 import os
 import re
 import sys
+import configparser
+import getpass
 from typing import Dict, List, Tuple, Any
 
 
@@ -41,9 +43,12 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--host", dest="host", default=None, help="Hostname (default: localhost)")
     parser.add_argument("--socket", dest="socket", default=None, help="MySQL socket path")
-    parser.add_argument("--port", dest="port", type=int, default=3306, help="Port (default: 3306)")
+    # Leave port unset by default so --defaults-extra-file can supply it; mysql-connector defaults to 3306 if omitted
+    parser.add_argument("--port", dest="port", type=int, default=None, help="Port (default: 3306)")
     parser.add_argument("--user", dest="user", default=None, help="Username")
-    parser.add_argument("--pass", dest="password", default=None, help="Password")
+    # Support -p with optional value: if -p is provided without a value, we'll prompt later
+    parser.add_argument("-p", "--pass", dest="password", nargs="?", const="", default=None, help="Password (omit value to be prompted)")
+    parser.add_argument("--defaults-extra-file", dest="defaults_extra_file", default=None, help="Read MySQL options from this file (uses [mysqltuner] and [client])")
 
     parser.add_argument("--debug", dest="debug", action="store_true", help="Enable debug output")
     parser.add_argument("--recommend", dest="recommend", action="store_true", help="Print recommendations at the end")
@@ -52,8 +57,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skipsize", dest="skipsize", action="store_true", help="Reserved for parity with Perl script")
 
     args = parser.parse_args()
+    # Handle explicit help early
     if args.help:
         print_usage_and_exit()
+    # Prompt for password if -p was provided without a value
+    if args.password == "":
+        try:
+            args.password = getpass.getpass("Enter password: ")
+        except Exception:
+            # Fallback to visible prompt if getpass fails
+            args.password = input("Enter password: ")
     if not args.config:
         print_usage_and_exit()
     return args
@@ -75,7 +88,9 @@ def print_usage_and_exit() -> None:
         f"    --port <port>        Port to use for connection (default: 3306)\n"
         f"    --socket <socket>    Socket to connect to for data retrieval\n"
         f"    --user <username>    Username to use for authentication\n"
-        f"    --pass <password>    Password to use for authentication\n\n"
+        f"    -p[password]         Password to use; use -p without value to be prompted\n"
+        f"    --pass <password>    Password to use for authentication (same as -p <password>)\n"
+        f"    --defaults-extra-file=/path/to/file.cnf  Read options from file ([mysqltuner] and [client])\n\n"
         f"   Remote/Offline Options\n"
         f"    --filelist <f1,f2..> Comma-separated file(s) to populate the key/value hash\n"
         f"                         Use --filelist when you do not want to connect to a database to get\n"
@@ -93,6 +108,64 @@ def print_usage_and_exit() -> None:
 def debug_print(debug: bool, message: str) -> None:
     if debug:
         print(message)
+
+
+def load_defaults_extra_file(path: str, debug: bool) -> Dict[str, str]:
+    """Load options from a MySQL-style option file.
+
+    Reads both [client] and [mysqltuner] sections. Values from [mysqltuner]
+    override those from [client]. Returns a flat dict of string values.
+    """
+    full_path = os.path.expanduser(path)
+    if not os.path.isfile(full_path):
+        print(f"ERROR: defaults-extra-file not found: {full_path}", file=sys.stderr)
+        sys.exit(2)
+    debug_print(debug, f"Reading defaults from {full_path}")
+
+    parser = configparser.RawConfigParser()
+    try:
+        with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+            parser.read_file(f)
+    except Exception as exc:
+        print(f"ERROR: Failed to read defaults-extra-file: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    merged: Dict[str, str] = {}
+    if parser.has_section("client"):
+        merged.update({k.lower(): v for k, v in parser.items("client")})
+    if parser.has_section("mysqltuner"):
+        # mysqltuner-specific values override client
+        merged.update({k.lower(): v for k, v in parser.items("mysqltuner")})
+
+    # Only keep keys we actually understand
+    allowed = {"host", "port", "user", "password", "socket"}
+    return {k: v for k, v in merged.items() if k in allowed}
+
+
+def apply_defaults_to_args(args: argparse.Namespace, defaults: Dict[str, str]) -> None:
+    """Apply defaults from file to args in-place without overriding explicit CLI values.
+
+    Precedence: CLI > defaults-extra-file. For port, convert to int if set.
+    """
+    # host
+    if getattr(args, "host", None) is None and "host" in defaults:
+        args.host = defaults["host"]
+    # socket
+    if getattr(args, "socket", None) is None and "socket" in defaults:
+        args.socket = defaults["socket"]
+    # port
+    if getattr(args, "port", None) is None and "port" in defaults:
+        try:
+            args.port = int(str(defaults["port"]).strip())
+        except Exception:
+            # Ignore invalid port values; leave as None to use driver default
+            pass
+    # user
+    if getattr(args, "user", None) is None and "user" in defaults:
+        args.user = defaults["user"]
+    # password
+    if getattr(args, "password", None) is None and "password" in defaults:
+        args.password = defaults["password"]
 
 
 def get_mysql_kv_from_live(args: argparse.Namespace) -> Dict[str, Any]:
@@ -485,6 +558,11 @@ def evaluate_and_print(
 
 def main() -> None:
     args = parse_args()
+
+    # Apply defaults from option file if provided
+    if getattr(args, "defaults_extra_file", None):
+        defaults = load_defaults_extra_file(args.defaults_extra_file, args.debug)
+        apply_defaults_to_args(args, defaults)
 
     # Determine mode: offline from files or live server
     if args.filelist:
